@@ -2,9 +2,8 @@
 #include <boost/asio.hpp>
 #include <thread>
 
-using boost::asio::ip::tcp;
-
-void receiveMessages(tcp::socket& socket) {
+void receive_messages(boost::asio::ip::tcp::socket& socket)
+{
     try {
         while (true) {
             char response[1024];
@@ -16,40 +15,44 @@ void receiveMessages(tcp::socket& socket) {
             }
         }
     } catch (std::exception& e) {
-        std::cerr << "Exception in receiveMessages: " << e.what() << std::endl;
+        std::cerr << "Exception in receive_messages: " << e.what() << std::endl;
     }
 }
 
-void sendMessage(tcp::socket& socket) {
+void send_message(boost::asio::ip::tcp::socket& socket)
+{
     try {
         std::string message;
         while (true) {
             std::getline(std::cin, message);
             boost::asio::write(socket, boost::asio::buffer(message));
-
-            if (message == "/quit") {
-                break;
-            }
         }
     } catch (std::exception& e) {
-        std::cerr << "Exception in sendMessage: " << e.what() << std::endl;
+        std::cerr << "Exception in send_message: " << e.what() << std::endl;
     }
 }
 
-int main() {
+int main()
+{
+    std::cout << "Welcome to Gecko!" << std::endl;
+
     try {
         boost::asio::io_service io_service;
-        tcp::socket socket(io_service);
-        tcp::resolver resolver(io_service);
+        boost::asio::ip::tcp::socket socket(io_service);
+        boost::asio::ip::tcp::resolver resolver(io_service);
 
         boost::asio::connect(socket, resolver.resolve({"127.0.0.1", "8080"}));
 
+        if (!socket.is_open()) {
+            std::cout << "Connection Failed." << std::endl;
+        }
+
         std::thread receive_thread([&]() {
-            receiveMessages(socket);
+            receive_messages(socket);
         });
 
         std::thread send_thread([&]() {
-            sendMessage(socket);
+            send_message(socket);
         });
 
         receive_thread.join();
